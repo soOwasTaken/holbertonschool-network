@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+echo "Active Internet connections (only servers)"
+echo "Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name"
+
+netstat -tlnp | awk 'NR > 2 {print $1, $4, $7}' | sed 's/.*://' | awk '{printf "%-5s %-8s %-23s ", $1, $2, $3}' | while read -r proto recvq sendq addr; do
+    pid=$(echo "$addr" | cut -d '/' -f 1)
+    program=$(echo "$addr" | cut -d '/' -f 2-)
+    echo "$proto $recvq $sendq $addr $(ps -p "$pid" -o comm=)"
+done
+
+echo "Active UNIX domain sockets (only servers)"
+echo "Proto RefCnt Flags       Type       State         I-Node   PID/Program name    Path"
+
+netstat -pln | awk 'NR > 2 {print $1, $8, $9}' | awk '{printf "%-5s %-6s %-10s ", $1, $2, $3}' | while read -r proto type path; do
+    pid=$(echo "$path" | cut -d '/' -f 1)
+    program=$(echo "$path" | cut -d '/' -f 2-)
+    echo "$proto 2      [ ACC ]     $type       LISTENING     -        $pid/$(ps -p "$pid" -o comm=)    $path"
+done
